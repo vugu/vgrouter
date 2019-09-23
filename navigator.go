@@ -28,8 +28,17 @@ type Navigator interface {
 	Navigate(path string, query url.Values, opts ...NavigatorOpt)
 }
 
-type QueryUpdater interface {
-	QueryUpdate()
+// NOTE: here's an idea of how to support injection of values during component creation without much hassle:
+type NavigatorRef struct {
+	Navigator // embed Navigator
+}
+
+func (h *NavigatorRef) NavigatorSet(o Navigator) {
+	h.Navigator = o
+}
+
+type NavigatorSetter interface {
+	NavigatorSet(Navigator)
 }
 
 // TODO: should we make NavQuery interface {Navigator;QueryUpdater} or similar?
