@@ -14,7 +14,7 @@ type RouteList struct {
 }
 
 type routeEntry struct {
-	pathPattern *regexp.Pattern
+	pathPattern *regexp.Regexp
 }
 
 func (r *RouteList) AddRoute(path string, h RouteHandler) {
