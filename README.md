@@ -17,3 +17,7 @@ Observations: If we treat a URL as just path and query (represented as string an
 Navigate() updates both with the ability to pass options (needed for replacing history, e.g.), and the query stuff
 (QueryUpdater interface and QueryBind) just deal with the query string and make it easy to do two-way binding.  This makes
 some assumptions (e.g. we don't do anything with the fragment, and you can't automagically bind path params), but the other side is the common case of mapping a URL to show one or more components in various places, and binding params to indicate more detailed state - that common case is really easy.  And working without query binding is no more difficult than the Vue router.  The fact that Navigator is it's own interface also makes things a lot less coupled.
+
+## More Notes:
+
+- Can we do "automatic routing"? I.e. implied routes based on folder structure.
