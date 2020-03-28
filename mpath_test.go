@@ -6,6 +6,32 @@ import (
 	"testing"
 )
 
+func TestMPathParamNames(t *testing.T) {
+
+	var mp mpath
+
+	mp, _ = parseMpath("/")
+	if !reflect.DeepEqual(mp.paramNames(), []string(nil)) {
+		t.Error()
+	}
+
+	mp, _ = parseMpath("/:id")
+	if !reflect.DeepEqual(mp.paramNames(), []string{"id"}) {
+		t.Error()
+	}
+
+	mp, _ = parseMpath("/a/:id")
+	if !reflect.DeepEqual(mp.paramNames(), []string{"id"}) {
+		t.Error()
+	}
+
+	mp, _ = parseMpath("/a/:id/:id2")
+	if !reflect.DeepEqual(mp.paramNames(), []string{"id", "id2"}) {
+		t.Error()
+	}
+
+}
+
 func TestMPathParse(t *testing.T) {
 
 	var tlist = []struct {
@@ -13,11 +39,11 @@ func TestMPathParse(t *testing.T) {
 		out mpath
 	}{
 		{"/", mpath{"/"}},
-		{"/:p1", mpath{"/", ":p1"}},
-		{"/:p1/", mpath{"/", ":p1"}},
-		{"/:p1/test", mpath{"/", ":p1", "/test"}},
-		{"/:p1/test/:p2", mpath{"/", ":p1", "/test/", ":p2"}},
-		{"/:p1/:p2", mpath{"/", ":p1", "/", ":p2"}},
+		{"/:p1", mpath{"/:p1"}},
+		{"/:p1/", mpath{"/:p1"}},
+		{"/:p1/test", mpath{"/:p1", "/test"}},
+		{"/:p1/test/:p2", mpath{"/:p1", "/test", "/:p2"}},
+		{"/:p1/:p2", mpath{"/:p1", "/:p2"}},
 		{"/a/b", mpath{"/a", "/b"}},
 	}
 
@@ -43,9 +69,9 @@ func TestMPathMergeMatch(t *testing.T) {
 		pvals  url.Values
 	}{
 		{"/", mpath{"/"}, nil},
-		{"/somewhere", mpath{"/", ":id"}, url.Values{"id": []string{"somewhere"}}},
-		{"/blah/somewhere", mpath{"/blah/", ":id"}, url.Values{"id": []string{"somewhere"}}},
-		{"/blah/somewhere/something", mpath{"/blah/", ":id", "/", ":id2"}, url.Values{"id": []string{"somewhere"}, "id2": []string{"something"}}},
+		{"/somewhere", mpath{"/:id"}, url.Values{"id": []string{"somewhere"}}},
+		{"/blah/somewhere", mpath{"/blah", "/:id"}, url.Values{"id": []string{"somewhere"}}},
+		{"/blah/somewhere/something", mpath{"/blah", "/:id", "/:id2"}, url.Values{"id": []string{"somewhere"}, "id2": []string{"something"}}},
 	}
 
 	for _, ti := range tlist {
@@ -59,7 +85,7 @@ func TestMPathMergeMatch(t *testing.T) {
 			}
 			p2, _, err := ti.mpath.merge(pv)
 			if err != nil {
-				t.Errorf("merge error: %w", err)
+				t.Errorf("merge error: %v", err)
 			}
 			if p2 != ti.inpath {
 				t.Errorf("expected p2 %#v, got %#v", ti.inpath, p2)
@@ -81,8 +107,9 @@ func TestMPathMatchExact(t *testing.T) {
 		{"/somewhere", mpath{"/"}, false, true},
 		{"/somewhere/here", mpath{"/somewhere"}, false, true},
 		{"/somewhere", mpath{"/somewhere"}, true, true},
-		{"/somewhere/1", mpath{"/somewhere/", ":id"}, true, true},
-		{"/somewhere/1/2", mpath{"/somewhere/", ":id"}, false, true},
+		{"/somewhere/1", mpath{"/somewhere", "/:id"}, true, true},
+		{"/somewhere/1/2", mpath{"/somewhere", "/:id"}, false, true},
+		{"/a/v1", mpath{"/a"}, false, true},
 	}
 
 	for _, ti := range tlist {

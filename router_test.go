@@ -57,7 +57,10 @@ func TestRouter(t *testing.T) {
 
 			ar := appRouter{Router: New(nil), out: make(map[string]RouteMatch)}
 			for _, p := range tc.rp {
+				p := p
+				// log.Printf("adding route for %q", p)
 				ar.MustAddRoute(p, RouteHandlerFunc(func(rm *RouteMatch) {
+					// log.Printf("got route handle for %q", p)
 					ar.out[p] = *rm
 				}))
 			}

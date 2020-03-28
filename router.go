@@ -5,10 +5,12 @@ import (
 )
 
 // TODO:
-// * more tests
-// * implplement js stuff and hash more
+// * more tests DONE
+// * implement js stuff and fragment
 // * do tests in wasm test suite
 // * make codegen directory router
+//   also make it output a list of files, so static generator can use it
+//   need index functionanlity plus see what we do about parameters if we can support
 
 // EventEnv is our view of a Vugu EventEnv
 type EventEnv interface {
