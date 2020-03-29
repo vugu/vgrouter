@@ -1,13 +1,23 @@
 package vgrouter
 
 import (
+	"fmt"
+	"log"
 	"net/url"
+	"strings"
+
+	"github.com/vugu/vugu/js"
 )
 
 // TODO:
 // * more tests DONE
+// * need path prefix support - wasm test suite needs it plus other
+// * need a method to just say "process this" and a variation of that which accepts an http.Request and sets it on the RouteMatch
 // * implement js stuff and fragment
 // * do tests in wasm test suite
+//   - one test can cover with and without fragement by detecting "#" upon page load
+// * do the change to generate to _gen.go, allow MixedCase.vugu, and put in a banner
+//   at the top of the generated file and detect before clobbering it
 // * make codegen directory router
 //   also make it output a list of files, so static generator can use it
 //   need index functionanlity plus see what we do about parameters if we can support
@@ -20,40 +30,6 @@ type EventEnv interface {
 
 	// RLock()   // acquire read lock
 	// RUnlock() // release read lock
-}
-
-// NavigatorOpt is a marker interface to ensure that options to Navigator are passed intentionally.
-type NavigatorOpt interface {
-	IsNavigatorOpt()
-}
-
-type intNavigatorOpt int
-
-// IsNavigatorOpt implements NavigatorOpt.
-func (i intNavigatorOpt) IsNavigatorOpt() {}
-
-var (
-	// NavReplace will cause this navigation to replace the
-	// current history entry rather than pushing to the stack.
-	// Implemented using window.history.replaceState()
-	NavReplace NavigatorOpt = intNavigatorOpt(1)
-
-	// NavSkipRender will cause this navigation to not re-render
-	// the current component state.  It can be used when a component
-	// has already accounted for the render in some other way and
-	// just wants to inform the Navigator of the current logical path and query.
-	NavSkipRender NavigatorOpt = intNavigatorOpt(2)
-)
-
-type navOpts []NavigatorOpt
-
-func (no navOpts) has(o NavigatorOpt) bool {
-	for _, o2 := range no {
-		if o == o2 {
-			return true
-		}
-	}
-	return false
 }
 
 // New returns a new Router.
@@ -73,6 +49,9 @@ func New(eventEnv EventEnv) *Router {
 // Router handles URL routing.
 type Router struct {
 	useFragment bool
+	pathPrefix  string
+
+	popStateFunc js.Func
 
 	eventEnv EventEnv
 
@@ -89,14 +68,68 @@ type routeEntry struct {
 	rh    RouteHandler
 }
 
-// UseFragment sets the fragment flag which if set means the fragment part of the URL (after the "#")
+// SetUseFragment sets the fragment flag which if set means the fragment part of the URL (after the "#")
 // is used as the path and query string.  This can be useful for compatibility in applications which are
 // served statically and do not have the ability to handle URL routing on the server side.
 // This option is disabled by default.  If used it should be set immediately after creation.  Changing it
 // after navigation may have undefined results.
-func (r *Router) UseFragment(v bool) {
+func (r *Router) SetUseFragment(v bool) {
 	r.useFragment = v
-	// TODO: if avail, register/unregister for fragment change event
+}
+
+// SetPathPrefix sets the path prefix to use prepend or stripe when iteracting with the browser or external requests.
+// Internally paths do not use this prefix.
+// For example, calling `r.SetPrefix("/pfx"); r.Navigate("/a", nil)` will result in /pfx/a in the browser, but the
+// path will be treated as just /a during processing.  The prefix is stripped from the URL when calling Pull()
+// and also when http.Requests are processed server-side.
+func (r *Router) SetPathPrefix(pfx string) {
+	r.pathPrefix = pfx
+}
+
+// ListenForPopState registers an event listener so the user navigating with
+// forward/back/history or fragment changes will be detected and handled by this router.
+// Any call to SetUseFragment or SetPathPrefix should occur before calling
+// ListenForPopState.
+//
+// Only works in wasm environment and if called outside it will have no effect and return error.
+func (r *Router) ListenForPopState() error {
+	return r.addPopStateListener(func(this js.Value, args []js.Value) interface{} {
+
+		// TODO: see if we need something better for error handling
+
+		// log.Printf("addPopStateListener callack")
+
+		u, err := r.readBrowserURL()
+		// log.Printf("addPopStateListener callack: u=%#v, err=%v", u, err)
+		if err != nil {
+			log.Printf("ListenForPopState: error from readBrowserURL: %v", err)
+			return nil
+		}
+
+		p := u.Path
+		if !strings.HasPrefix(p, r.pathPrefix) {
+			log.Printf("ListenForPopState: prefix error: %v",
+				ErrMissingPrefix{Path: p, Message: fmt.Sprintf("path %q does not begin with prefix %q", p, r.pathPrefix)})
+			return nil
+		}
+
+		tp := strings.TrimPrefix(p, r.pathPrefix)
+		q := u.Query()
+
+		// log.Printf("addPopStateListener calling process: tp=%q, q=%#v", tp, q)
+
+		r.eventEnv.Lock()
+		defer r.eventEnv.UnlockRender()
+		r.process(tp, q)
+
+		return nil
+
+	})
+}
+
+// UnlistenForPopState removes the listener created by ListenForPopState.
+func (r *Router) UnlistenForPopState() error {
+	return r.removePopStateListener()
 }
 
 // MustNavigate is like Navigate but panics upon error.
@@ -110,7 +143,9 @@ func (r *Router) MustNavigate(path string, query url.Values, opts ...NavigatorOp
 // Navigate will go the specified path and query.
 func (r *Router) Navigate(path string, query url.Values, opts ...NavigatorOpt) error {
 
-	pq := path
+	r.process(path, query)
+
+	pq := r.pathPrefix + path
 	q := query.Encode()
 	if len(q) > 0 {
 		pq = pq + "?" + q
@@ -125,9 +160,20 @@ func (r *Router) Navigate(path string, query url.Values, opts ...NavigatorOpt) e
 	return nil
 }
 
+// ErrMissingPrefix is returned when a prefix was expected but not found.
+type ErrMissingPrefix struct {
+	Message string // error message
+	Path    string // path which is missing the prefix
+}
+
+// Error implements error.
+func (e ErrMissingPrefix) Error() string { return e.Message }
+
 // Pull will read the current browser URL and navigate to it.  This is generally called
 // once at application startup.
 // Only works in wasm environment otherwise has no effect and will return error.
+// If a path prefix has been set and the path read does not start with prefix
+// then an error of type *ErrMissingPrefix will be returned.
 func (r *Router) Pull() error {
 
 	u, err := r.readBrowserURL()
@@ -135,7 +181,12 @@ func (r *Router) Pull() error {
 		return err
 	}
 
-	r.process(u.Path, u.Query())
+	p := u.Path
+	if !strings.HasPrefix(p, r.pathPrefix) {
+		return ErrMissingPrefix{Path: p, Message: fmt.Sprintf("path %q does not begin with prefix %q", p, r.pathPrefix)}
+	}
+
+	r.process(strings.TrimPrefix(p, r.pathPrefix), u.Query())
 
 	return nil
 }
@@ -155,7 +206,7 @@ func (r *Router) Push(opts ...NavigatorOpt) error {
 	}
 
 	q := outParams.Encode()
-	pq := outPath
+	pq := r.pathPrefix + outPath
 	if len(q) > 0 {
 		pq = pq + "?" + q
 	}
@@ -176,6 +227,25 @@ func (r *Router) UnbindParams() {
 	for k := range r.bindParamMap {
 		delete(r.bindParamMap, k)
 	}
+}
+
+// MustAddRouteExact is like AddRouteExact but panic's upon error.
+func (r *Router) MustAddRouteExact(path string, rh RouteHandler) {
+	err := r.AddRouteExact(path, rh)
+	if err != nil {
+		panic(err)
+	}
+}
+
+// AddRouteExact adds a route but only calls the handler if the path
+// provided matches exactly. E.g. an exact route for "/a" will not fire
+// when "/a/b" is navigated to (whereas AddRoute would do this).
+func (r *Router) AddRouteExact(path string, rh RouteHandler) error {
+	return r.AddRoute(path, RouteHandlerFunc(func(rm *RouteMatch) {
+		if rm.Exact {
+			rh.RouteHandle(rm)
+		}
+	}))
 }
 
 // MustAddRoute is like AddRoute but panics upon error.

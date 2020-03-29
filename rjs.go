@@ -43,7 +43,7 @@ func (r *Router) readBrowserURL() (*url.URL, error) {
 
 	var locstr string
 	if r.useFragment {
-		locstr = strings.TrimPrefix(js.Global().Get("window").Get("location").Get("hash").Call("toString").String(), "#")
+		locstr = strings.TrimPrefix(js.Global().Get("window").Get("location").Get("hash").String(), "#")
 	} else {
 		locstr = js.Global().Get("window").Get("location").Call("toString").String()
 	}
@@ -54,5 +54,45 @@ func (r *Router) readBrowserURL() (*url.URL, error) {
 	}
 
 	return u, nil
+
+}
+
+func (r *Router) removePopStateListener() error {
+
+	g := js.Global()
+	if !g.Truthy() {
+		return errors.New("not in browser (js) environment")
+	}
+
+	if r.popStateFunc.IsUndefined() {
+		return errors.New("popstate listener not set")
+	}
+
+	g.Get("window").Call("removeEventListener", "popstate", r.popStateFunc)
+
+	r.popStateFunc.Release()
+	r.popStateFunc = js.Func{}
+
+	return nil
+}
+
+func (r *Router) addPopStateListener(f func(this js.Value, args []js.Value) interface{}) error {
+
+	g := js.Global()
+	if !g.Truthy() {
+		return errors.New("not in browser (js) environment")
+	}
+
+	if !r.popStateFunc.IsUndefined() {
+		return errors.New("popstate listener already set")
+	}
+
+	jf := js.FuncOf(f)
+
+	g.Get("window").Call("addEventListener", "popstate", jf)
+
+	r.popStateFunc = jf
+
+	return nil
 
 }
