@@ -1,6 +1,9 @@
 # vgrouter
-A URL router for Vugu (CURRENTLY BROKEN, BUT ACTIVELY BEING WORKED ON)
+A URL router for Vugu.  As of 29 March 2020 this is functional.  See test case here for an example: https://github.com/vugu/vugu/tree/master/wasm-test-suite/test-012-router
 
+More documention will follow.
+
+<!--
 ## NOTES:
 
 Basic idea:
@@ -21,3 +24,4 @@ some assumptions (e.g. we don't do anything with the fragment, and you can't aut
 ## More Notes:
 
 - Can we do "automatic routing"? I.e. implied routes based on folder structure.
+-->
