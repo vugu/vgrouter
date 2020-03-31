@@ -3,6 +3,7 @@ package vgrouter
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"net/url"
 	"strings"
 
@@ -160,6 +161,12 @@ func (r *Router) Navigate(path string, query url.Values, opts ...NavigatorOpt) e
 	return nil
 }
 
+// BrowserAvail returns true if in browser mode.
+func (r *Router) BrowserAvail() bool {
+	// this is really just so otehr packages don't have to import `js` just to figure out if they should do extra browser setup
+	return js.Global().Truthy()
+}
+
 // ErrMissingPrefix is returned when a prefix was expected but not found.
 type ErrMissingPrefix struct {
 	Message string // error message
@@ -277,9 +284,29 @@ func (r *Router) SetNotFound(rh RouteHandler) {
 	r.notFoundHandler = rh
 }
 
+// GetNotFound returns what was set by SetNotFound.  Provided to facilitate code that needs
+// to wrap an existing not found behavior with another one.
+func (r *Router) GetNotFound() RouteHandler {
+	return r.notFoundHandler
+}
+
+// ProcessRequest processes the route contained in request. This is meant for server-side use with static rendering.
+func (r *Router) ProcessRequest(req *http.Request) {
+
+	p := req.URL.Path
+	q := req.URL.Query()
+
+	r.process2(p, q, req)
+
+}
+
 // process is used interally to run through the routes and call appropriate handlers.
 // It will set bindRouteMPath and unbind the params and allow them to be reset.
 func (r *Router) process(path string, query url.Values) {
+	r.process2(path, query, nil)
+}
+
+func (r *Router) process2(path string, query url.Values, req *http.Request) {
 
 	// TODO: ideally we would improve the performance here with some fancy trie stuff, but for the moment
 	// I'm much more concerned with getting things functional.
@@ -315,6 +342,7 @@ func (r *Router) process(path string, query url.Values) {
 			RoutePath: re.mpath.String(),
 			Params:    pvals,
 			Exact:     exact,
+			Request:   req,
 		}
 
 		re.rh.RouteHandle(req)
@@ -323,8 +351,9 @@ func (r *Router) process(path string, query url.Values) {
 
 	if !foundExact && r.notFoundHandler != nil {
 		r.notFoundHandler.RouteHandle(&RouteMatch{
-			router: r,
-			Path:   path,
+			router:  r,
+			Path:    path,
+			Request: req,
 		})
 	}
 
@@ -347,6 +376,8 @@ type RouteMatch struct {
 	RoutePath string     // route path pattern with params as :param
 	Params    url.Values // parameters (combined query and route params)
 	Exact     bool       // true if the path is an exact match or false if just the prefix
+
+	Request *http.Request // if ProcessRequest is used, this will be set to Request instance passed to it; server-side only
 
 	router *Router
 }
