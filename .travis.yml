@@ -14,7 +14,7 @@ env:
   - GO111MODULE=on
 
 script:
-  - go test .
+  - go test ./...
 
 notifications:
   email: true
