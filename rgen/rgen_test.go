@@ -61,7 +61,7 @@ import (
 
 func TestOutput(t *testing.T) {
 
-	m := MakeRoutes().WithRecursive(true).Map()
+	m := MakeRoutes().WithRecursive(true).WithClean(true).Map()
 	plist := make([]string, 0, len(m))
 	for p := range m {
 		plist = append(plist, p)
@@ -101,7 +101,8 @@ func TestOutput(t *testing.T) {
 	if !regexp.MustCompile(`ROUTE: /page1 -> \*.*\.Page1`).MatchString(routeLines[1]) {
 		t.Fail()
 	}
-	if !regexp.MustCompile(`ROUTE: /section1/ -> \*section1\.Index`).MatchString(routeLines[2]) {
+	// if !regexp.MustCompile(`ROUTE: /section1/ -> \*section1\.Index`).MatchString(routeLines[2]) {
+	if !regexp.MustCompile(`ROUTE: /section1 -> \*section1\.Index`).MatchString(routeLines[2]) {
 		t.Fail()
 	}
 	if !regexp.MustCompile(`ROUTE: /section1/page-a -> \*section1\.PageA`).MatchString(routeLines[3]) {
