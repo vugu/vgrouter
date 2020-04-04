@@ -1,8 +1,8 @@
 # vgrouter
 
-A URL router for Vugu.  As of 29 March 2020 this is functional.  See test case here for an example: https://github.com/vugu/vugu/tree/master/wasm-test-suite/test-012-router
+A URL router for Vugu.  As of April 2020 this is functional.  See test cases https://github.com/vugu/vgrouter/blob/master/rgen/rgen_test.go and https://github.com/vugu/vugu/tree/master/wasm-test-suite/test-012-router as examples. 
 
-[![Travis CI](https://travis-ci.org/vugu/vgrouter.svg?branch=master)](https://travis-ci.org/vugu/vugu)
+[![Travis CI](https://travis-ci.org/vugu/vgrouter.svg?branch=master)](https://travis-ci.org/vugu/vgrouter)
 
 More documention will follow.
 
