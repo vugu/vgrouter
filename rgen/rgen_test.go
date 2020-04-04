@@ -19,7 +19,7 @@ func TestFull(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// defer os.RemoveAll(tmpDir)
+	defer os.RemoveAll(tmpDir)
 	log.Printf("tmpDir: %s", tmpDir)
 
 	must(ioutil.WriteFile(filepath.Join(tmpDir, "go.mod"), []byte(`module rgentestfull
@@ -32,6 +32,9 @@ require github.com/vugu/vugu master
 	must(ioutil.WriteFile(filepath.Join(tmpDir, "section1", "index.vugu"), []byte("<div></div>"), 0644))
 	must(ioutil.WriteFile(filepath.Join(tmpDir, "section1", "page-a.vugu"), []byte("<div></div>"), 0644))
 	must(ioutil.WriteFile(filepath.Join(tmpDir, "section1", "page-b.vugu"), []byte("<div></div>"), 0644))
+	must(os.MkdirAll(filepath.Join(tmpDir, "section1/subsection1"), 0755))
+	must(ioutil.WriteFile(filepath.Join(tmpDir, "section1/subsection1", "index.vugu"), []byte("<div></div>"), 0644))
+	must(ioutil.WriteFile(filepath.Join(tmpDir, "section1/subsection1", "page-c.vugu"), []byte("<div></div>"), 0644))
 
 	err = New().SetDir(tmpDir).SetRecursive(true).Generate()
 	if err != nil {
@@ -45,6 +48,11 @@ require github.com/vugu/vugu master
 		t.Fatal(err)
 	}
 	parser = gen.NewParserGoPkg(filepath.Join(tmpDir, "section1"), nil)
+	err = parser.Run()
+	if err != nil {
+		t.Fatal(err)
+	}
+	parser = gen.NewParserGoPkg(filepath.Join(tmpDir, "section1/subsection1"), nil)
 	err = parser.Run()
 	if err != nil {
 		t.Fatal(err)
@@ -96,20 +104,26 @@ func TestOutput(t *testing.T) {
 	}
 
 	if !regexp.MustCompile(`ROUTE: / -> \*.*\.Index`).MatchString(routeLines[0]) {
-		t.Fail()
+		t.Errorf("match failure")
 	}
 	if !regexp.MustCompile(`ROUTE: /page1 -> \*.*\.Page1`).MatchString(routeLines[1]) {
-		t.Fail()
+		t.Errorf("match failure")
 	}
 	// if !regexp.MustCompile(`ROUTE: /section1/ -> \*section1\.Index`).MatchString(routeLines[2]) {
 	if !regexp.MustCompile(`ROUTE: /section1 -> \*section1\.Index`).MatchString(routeLines[2]) {
-		t.Fail()
+		t.Errorf("match failure")
 	}
 	if !regexp.MustCompile(`ROUTE: /section1/page-a -> \*section1\.PageA`).MatchString(routeLines[3]) {
-		t.Fail()
+		t.Errorf("match failure")
 	}
 	if !regexp.MustCompile(`ROUTE: /section1/page-b -> \*section1\.PageB`).MatchString(routeLines[4]) {
-		t.Fail()
+		t.Errorf("match failure")
+	}
+	if !regexp.MustCompile(`ROUTE: /section1/subsection1 -> \*subsection1\.Index`).MatchString(routeLines[5]) {
+		t.Errorf("match failure")
+	}
+	if !regexp.MustCompile(`ROUTE: /section1/subsection1/page-c -> \*subsection1\.PageC`).MatchString(routeLines[6]) {
+		t.Errorf("match failure")
 	}
 
 }
