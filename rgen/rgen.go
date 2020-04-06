@@ -221,7 +221,7 @@ func (g *Generator) writeRoutes(df *dirf) error {
 		"PathBase": path.Base,
 	}
 
-	t := template.New("route_map_vgen.go")
+	t := template.New("0_routes_vgen.go")
 	t.Funcs(fm)
 	t, err := t.Parse(`package {{.LocalPackage}}
 
@@ -307,7 +307,7 @@ func MakeRoutes() vgroutes {
 		return err
 	}
 
-	fullRouteMapPath := filepath.Join(g.dir, df.path, "route_map_vgen.go")
+	fullRouteMapPath := filepath.Join(g.dir, df.path, "0_routes_vgen.go")
 
 	err = ioutil.WriteFile(fullRouteMapPath, buf.Bytes(), 0644)
 	if err != nil {
