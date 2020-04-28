@@ -2,6 +2,7 @@ github.com/cheekybits/is v0.0.0-20150225183255-68e9c0620927/go.mod h1:h/aW8ynjgk
 github.com/chromedp/cdproto v0.0.0-20191009033829-c22f49c9ff0a/go.mod h1:PfAWWKJqjlGFYJEidUM6aVIWPr0EpobeyVWEEmplX7g=
 github.com/chromedp/chromedp v0.5.1/go.mod h1:3NMfuKTrKNr8PWEvHzdzZ57PK4jm9zW1C5nKiaWdxcM=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dustin/go-humanize v1.0.0/go.mod h1:HtrtbFcZ19U5GC7JDqmcUSB87Iq5E25KnS6fMYU6eOk=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/gobwas/httphead v0.0.0-20180130184737-2c6c146eadee/go.mod h1:L0fX3K22YWvt/FAX9NnzrNzcI4wNYi9Yku4O0LKYflo=
@@ -24,6 +25,8 @@ github.com/vugu/vugu v0.1.1-0.20200331000654-0d4b64362b04 h1:IxkA/3CjtvrpQBC/yuu
 github.com/vugu/vugu v0.1.1-0.20200331000654-0d4b64362b04/go.mod h1:ZKTep3ABw5XlGBkT+RIw00ds49bsWPvbTaZiLUe07Ys=
 github.com/vugu/vugu v0.1.1-0.20200406224150-50acda24c5ef h1:D/a/mnpFhm08XZ4OYakRYrigpMNUEwV/eUrppRUXFr0=
 github.com/vugu/vugu v0.1.1-0.20200406224150-50acda24c5ef/go.mod h1:kXK4tbS92o3x29D/W5kpOkysOm5IMd7OUu+pcqyIz0M=
+github.com/vugu/vugu v0.3.0 h1:/02oeyFqSU9+OZyG2A0NiF5WeRmiyXaD9WNdhit97BY=
+github.com/vugu/vugu v0.3.0/go.mod h1:RFwOrlJHEkdZvrFcde4d6c0/7SqlRA8E4l2yz1Rs8xM=
 github.com/vugu/xxhash v0.0.0-20191111030615-ed24d0179019 h1:8NGiD5gWbVGObr+lnqcbM2rcOQBO6mr+m19BIblCdho=
 github.com/vugu/xxhash v0.0.0-20191111030615-ed24d0179019/go.mod h1:PrBK6+LJXwb+3EnJTHo43Uh4FhjFFwvN4jKk4Zc5zZ8=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
