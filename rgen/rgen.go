@@ -190,10 +190,12 @@ func (df *dirf) Path() string { return df.path }
 
 func (g *Generator) writeRoutes(df *dirf) error {
 
+	// TODO: this should be smarter about detecting what local package name is currently in use and using that
 	_, localPackage := path.Split(df.path)
 	if localPackage == "" {
 		_, localPackage = filepath.Split(g.dir)
 	}
+	localPackage = strings.ReplaceAll(localPackage, "-", "_") // dashes not allowed, replace them with underscore for now
 
 	cm := map[string]interface{}{
 		"LocalPackage": localPackage,
