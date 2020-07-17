@@ -329,14 +329,11 @@ func (r *Router) process2(path string, query url.Values, req *http.Request) {
 			r.bindRouteMPath = re.mpath
 		}
 
-		//log.Printf("pvals = %v", pvals)
-		//pvals := make(url.Values, 2)
 		// merge any other values from query into pvals
 		if pvals == nil {
 			pvals = make(url.Values)
 		}
 		for k, v := range query {
-			//log.Printf("k = %v, v = %v", k, v)
 			if pvals[k] == nil {
 				pvals[k] = v
 			}
